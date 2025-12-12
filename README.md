@@ -334,6 +334,40 @@ CLI architecture: `main()` parses `argv` and dispatches to `cli.c` handlers. Use
 - Binary search trees: ordered views (e.g., elections by start time, users by email) for range listings.
 - Selection (tournament) tree: fast winner/runner-up from candidate counts; O(log n) update per vote, O(n) build.
 
+## Data Structures in this Implementation (what, where, why)
+
+- **Linked list** (`src/core/linked_list.c`): holds users, elections, votes in memory for easy iteration and append (order preserved, O(1) append). Used in `app_state_t` to maintain runtime collections.
+- **Queue** (`src/core/queue.c`): backs audit buffering (FIFO) and can support future background tasks; FIFO semantics mirror log flush order.
+- **Stack** (`src/core/stack.c`): available for rollback frames and non-recursive traversals; shows LIFO behavior and dynamic growth.
+- **Hash table (open addressing)** (`src/core/hash_table.c`): primary in-memory index for fast lookups:
+  - `user_id -> ptr`, `email_hash -> ptr`
+  - `election_id -> ptr`
+  - `(election_id,voter_id) -> seen` to enforce one-vote rule
+  Power-of-two capacity with linear probing and tombstones; ~O(1) average operations.
+- **Binary search tree (BST)** (`src/core/bst.c`): supports ordered traversals/range queries (e.g., list elections by start time); demonstrates tree insert/search/inorder.
+- **Selection (tournament) tree** (`src/core/selection_tree.c`): used in tallying to compute winner efficiently; O(n) build, O(log n) update per change; finds max candidate count quickly.
+- **CSV aggregation hash table** (`src/cli/cli.c`): reuses hash table to merge vote counts from multiple machine CSV exports on the admin machine.
+
+## How the system flows (with DS emphasis)
+
+1) **Startup**: `app_load_from_disk` rebuilds state by reading binary files and inserting into linked lists and hash tables (rehydrates indexes).
+2) **Registration**: append user to linked list; hash inserts for `id` and `email`; single-admin constraint checked; credentials stored.
+3) **Login**: hash lookup by email; admin additionally requires PIN.
+4) **Election creation** (admin): append election to list; hash index by id.
+5) **Voting** (voter): verify phase; hash set `(election_id,voter_id)` prevents double-vote; vote appended to list; candidates shown from election record’s array.
+6) **Tally**: counts array per election feeds selection tree to find winner; prints counts.
+7) **Export/aggregate**: votes list written to CSV; admin merges multiple CSVs using hash table keyed by `(election_id, choice)`.
+8) **Persistence**: data stored as CSV (`data/state.csv`, `users.csv`, `elections.csv`, `votes.csv`); on next run, lists and hashes are rebuilt from CSV.
+
+## Module map (what lives where)
+- `src/app/`: core application logic (registration, login with PIN for admin, election lifecycle, vote casting, CSV persistence, tally).
+- `src/cli/`: menu-driven UI (separate admin/voter menus, CSV export/aggregation).
+- `src/core/`: data structures (linked list, queue, stack, hash table, BST, selection tree).
+- `src/auth/`: simple password hashing/verification (placeholder hash).
+- `src/storage/`: WAL placeholder and storage scaffolding (kept minimal).
+- `src/tally/`: tally helper using selection tree.
+- `src/audit/`: queued audit logging (append-to-file).
+
 ---
 
 ## Testing & QA Plan
@@ -354,6 +388,14 @@ make all
 # Windows (MinGW): gcc -std=c11 -Wall -Wextra -O2 -Isrc -o bin/onlinevote.exe $(find src -name "*.c")
 # Windows (MSVC): cl /std:c11 /W4 /Fe:bin\\onlinevote.exe (list all .c files)
 ```
+
+### Runtime data (CSV)
+- State, users, elections, and votes persist in `data/*.csv`:
+  - `state.csv`: admin flag/PIN, next-id counters.
+  - `users.csv`: id, name, email, role, active, salt/hash (hex).
+  - `elections.csv`: id, title, description, phase, candidates (pipe-separated).
+  - `votes.csv`: id, election_id, voter_id, choice.
+- On startup we load CSVs; on exit we save CSVs.
 
 ### Run
 
