@@ -1,0 +1,23 @@
+{
+  "name": "election-management-monitoring-system",
+  "version": "1.0.0",
+  "description": "Election Management and Monitoring System with data structures showcase",
+  "main": "src/server/index.js",
+  "scripts": {
+    "start": "bun run src/server/index.js",
+    "dev": "bun --watch src/server/index.js"
+  },
+  "keywords": [
+    "voting",
+    "election",
+    "data-structures",
+    "bun"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "hono": "^4.0.0"
+  },
+  "devDependencies": {}
+}
+

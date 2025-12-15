@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Election Management and Monitoring System</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🗳️ Election Management and Monitoring System</h1>
+            <p class="subtitle">Secure • Transparent • Democratic</p>
+        </header>
+
+        <!-- Login/Register Section -->
+        <div id="auth-section" class="section">
+            <div class="auth-tabs">
+                <button class="tab-btn active" onclick="showTab('login')">Login</button>
+                <button class="tab-btn" onclick="showTab('register')">Register</button>
+            </div>
+
+            <div id="login-tab" class="tab-content active">
+                <h2>Login</h2>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label>User Type:</label>
+                        <select id="login-role" required>
+                            <option value="voter">Voter</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Email:</label>
+                        <input type="email" id="login-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password:</label>
+                        <input type="password" id="login-password" required>
+                    </div>
+                    <div class="form-group" id="admin-pin-group" style="display: none;">
+                        <label>Admin PIN:</label>
+                        <input type="password" id="admin-pin" placeholder="Enter admin PIN">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Login</button>
+                </form>
+            </div>
+
+            <div id="register-tab" class="tab-content">
+                <h2>Register as Voter</h2>
+                <form id="register-form">
+                    <div class="form-group">
+                        <label>Name:</label>
+                        <input type="text" id="register-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email:</label>
+                        <input type="email" id="register-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password:</label>
+                        <input type="password" id="register-password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Register</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Voter Dashboard -->
+        <div id="voter-dashboard" class="section" style="display: none;">
+            <div class="dashboard-header">
+                <h2>Welcome, <span id="voter-name"></span>!</h2>
+                <button class="btn btn-secondary" onclick="logout()">Logout</button>
+            </div>
+
+            <div class="elections-list">
+                <h3>Active Elections</h3>
+                <div id="voter-elections"></div>
+            </div>
+
+            <div class="surveys-section" style="margin-top: 30px;">
+                <h3>Candidate Surveys</h3>
+                <p class="info-text">Share your opinions about candidates</p>
+                <div id="voter-surveys"></div>
+            </div>
+
+            <div id="vote-modal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <span class="close" onclick="closeVoteModal()">&times;</span>
+                    <h2 id="vote-election-title"></h2>
+                    <div id="vote-candidates"></div>
+                    <div id="vote-manifestos"></div>
+                    <button class="btn btn-primary" onclick="submitVote()">Submit Vote</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard -->
+        <div id="admin-dashboard" class="section" style="display: none;">
+            <div class="dashboard-header">
+                <h2>Admin Dashboard</h2>
+                <button class="btn btn-secondary" onclick="logout()">Logout</button>
+            </div>
+
+            <div class="admin-tabs">
+                <button class="tab-btn active" onclick="showAdminTab('elections')">Elections</button>
+                <button class="tab-btn" onclick="showAdminTab('create')">Create Election</button>
+                <button class="tab-btn" onclick="showAdminTab('surveys')">Surveys</button>
+                <button class="tab-btn" onclick="showAdminTab('predictions')">Predictions</button>
+            </div>
+
+            <div id="admin-elections-tab" class="admin-tab-content active">
+                <h3>Manage Elections</h3>
+                <div id="admin-elections"></div>
+            </div>
+
+            <div id="admin-create-tab" class="admin-tab-content">
+                <h3>Create New Election</h3>
+                <form id="create-election-form">
+                    <div class="form-group">
+                        <label>Title:</label>
+                        <input type="text" id="election-title" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Description:</label>
+                        <textarea id="election-description" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Candidates (comma-separated):</label>
+                        <input type="text" id="election-candidates" placeholder="Alice, Bob, Carol" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Create Election</button>
+                </form>
+            </div>
+
+            <div id="admin-surveys-tab" class="admin-tab-content">
+                <h3>Manage Surveys</h3>
+                <div id="surveys-list"></div>
+                <button class="btn btn-primary" onclick="showCreateSurveyModal()" style="margin-top: 20px;">Create New Survey</button>
+            </div>
+
+            <div id="admin-predictions-tab" class="admin-tab-content">
+                <h3>Election Predictions & Analytics</h3>
+                <div id="predictions-list"></div>
+            </div>
+
+            <div id="manifesto-modal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <span class="close" onclick="closeManifestoModal()">&times;</span>
+                    <h2>Add Manifesto</h2>
+                    <form id="manifesto-form">
+                        <div class="form-group">
+                            <label>Candidate:</label>
+                            <select id="manifesto-candidate"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Manifesto (Promises):</label>
+                            <textarea id="manifesto-text" rows="10" placeholder="Enter candidate's promises and manifesto..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Manifesto</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+            <div id="survey-modal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <span class="close" onclick="closeSurveyModal()">&times;</span>
+                    <h2>Submit Survey Response</h2>
+                    <div id="survey-content"></div>
+                    <form id="survey-response-form">
+                        <div class="form-group">
+                            <label>Rating (1-5 stars):</label>
+                            <select id="survey-rating" required>
+                                <option value="">Select rating</option>
+                                <option value="5">5 - Excellent</option>
+                                <option value="4">4 - Very Good</option>
+                                <option value="3">3 - Good</option>
+                                <option value="2">2 - Fair</option>
+                                <option value="1">1 - Poor</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Comment (optional):</label>
+                            <textarea id="survey-comment" rows="4" placeholder="Share your opinion about this candidate..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Submit Response</button>
+                    </form>
+                </div>
+            </div>
+
+            <div id="create-survey-modal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <span class="close" onclick="closeCreateSurveyModal()">&times;</span>
+                    <h2>Create Survey</h2>
+                    <form id="create-survey-form">
+                        <div class="form-group">
+                            <label>Election:</label>
+                            <select id="survey-election" required></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Candidate:</label>
+                            <select id="survey-candidate" required></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Question:</label>
+                            <textarea id="survey-question" rows="3" placeholder="What is your opinion about this candidate?" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Create Survey</button>
+                    </form>
+                </div>
+            </div>
+    </div>
+
+    <script src="/js/app.js"></script>
+</body>
+</html>
+
